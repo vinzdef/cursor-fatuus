@@ -26,10 +26,10 @@ final class Settings: ObservableObject {
         defaults.register(defaults: [
             "enabled": true,
             "color": [1.0, 1.0, 1.0],
-            "opacity": 0.85,
+            "opacity": 0.13,
             "blurRadius": 0.0,
             "invert": false,
-            "radius": 80.0,
+            "radius": 175.0,
             "softness": 1.0,
         ])
         enabled = defaults.bool(forKey: "enabled")

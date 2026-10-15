@@ -54,22 +54,6 @@
     z-index: 10;
   }
 
-  /* A faint wisp trails the visitor's pointer across the whole page. */
-  .trail {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 520px;
-    height: 520px;
-    margin: -260px 0 0 -260px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(201, 184, 240, 0.13), transparent 65%);
-    pointer-events: none;
-    transform: translate3d(-999px, -999px, 0);
-    z-index: 0;
-    mix-blend-mode: screen;
-  }
-
   main { position: relative; z-index: 1; }
 
   a { color: inherit; }
@@ -241,10 +225,12 @@
 
   .field canvas { display: block; width: 100%; height: 100%; }
 
-  /* Color, opacity, filters and the fade mask are set from the panel in script. */
+  /* Follows the pointer across the whole page, over the content like the app's
+     overlay. Color, opacity, filters and the fade mask are set from the panel in script. */
   .spot {
-    --r: 80px;
-    position: absolute;
+    --r: 175px;
+    position: fixed;
+    z-index: 5;
     left: 0;
     top: 0;
     width: calc(var(--r) * 2);
@@ -602,7 +588,7 @@
 </style>
 </head>
 <body>
-<div class="trail" aria-hidden="true"></div>
+<div class="spot" aria-hidden="true" hidden></div>
 
 <main>
   <header class="wrap hero">
@@ -639,7 +625,6 @@
     <div class="demo-body">
       <div class="field">
         <canvas aria-hidden="true"></canvas>
-        <div class="spot" aria-hidden="true" hidden></div>
       </div>
       <div class="popover">
         <div class="menubar" aria-hidden="true">
@@ -656,9 +641,9 @@
           <span id="fx-color-label">Color</span>
           <div class="swatches" role="radiogroup" aria-labelledby="fx-color-label"></div>
           <label for="fx-opacity">Opacity</label>
-          <input id="fx-opacity" type="range" min="0" max="1" step="0.01" value="0.85">
+          <input id="fx-opacity" type="range" min="0" max="1" step="0.01" value="0.13">
           <label for="fx-radius">Radius</label>
-          <input id="fx-radius" type="range" min="1" max="300" step="1" value="80">
+          <input id="fx-radius" type="range" min="1" max="300" step="1" value="175">
           <label for="fx-softness">Softness</label>
           <input id="fx-softness" type="range" min="0" max="1" step="0.01" value="1">
           <hr>
@@ -758,18 +743,12 @@
   let reduceMotion = motionQuery.matches;
   motionQuery.addEventListener('change', (e) => { reduceMotion = e.matches; });
 
-  // Page-wide trail.
-  const trail = document.querySelector('.trail');
-  addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse') trail.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-  });
-
   // Demo field: a deliberately busy canvas of drifting shapes, seeded so it
   // looks the same each visit.
   const field = document.querySelector('.field');
   const canvas = field.querySelector('canvas');
   const ctx = canvas.getContext('2d');
-  const spot = field.querySelector('.spot');
+  const spot = document.querySelector('.spot');
   let width = 0, height = 0, shapes = [];
 
   function resize() {
@@ -833,7 +812,7 @@
   requestAnimationFrame(frame);
 
   // Panel state, with the app's defaults.
-  const settings = { enabled: true, color: '#ffffff', opacity: 0.85, blur: 0, radius: 80, softness: 1, invert: false };
+  const settings = { enabled: true, color: '#ffffff', opacity: 0.13, blur: 0, radius: 175, softness: 1, invert: false };
   let inside = false;
 
   // Same curve as the app: solid core, then 1 - smoothstep over the outer
@@ -859,18 +838,17 @@
     spot.style.maskImage = spot.style.webkitMaskImage = falloff(settings.softness);
   }
 
-  // The spot exists only while the pointer is over the field.
+  // The spot exists only while the pointer is over the page.
   function follow(e) {
-    const r = field.getBoundingClientRect();
-    spot.style.transform = `translate3d(${e.clientX - r.left}px, ${e.clientY - r.top}px, 0)`;
+    spot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
     if (!inside) { inside = true; apply(); }
   }
   function leave() { inside = false; apply(); }
-  field.addEventListener('pointermove', follow);
-  field.addEventListener('pointerdown', follow);
-  field.addEventListener('pointerleave', leave);
-  field.addEventListener('pointercancel', leave);
-  field.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') leave(); });
+  addEventListener('pointermove', follow);
+  addEventListener('pointerdown', follow);
+  addEventListener('pointercancel', leave);
+  addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') leave(); });
+  document.addEventListener('pointerout', (e) => { if (!e.relatedTarget) leave(); });
 
   // Panel controls.
   const swatches = document.querySelector('.swatches');
