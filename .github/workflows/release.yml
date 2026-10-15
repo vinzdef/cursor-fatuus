@@ -1,0 +1,23 @@
+# Push a tag like v1.0.0 to build the universal DMG and publish it as a release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build DMG
+        run: make dmg ARCHS="--arch arm64 --arch x86_64" VERSION="${GITHUB_REF_NAME#v}"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/CursorFatuus.dmg --title "Cursor Fatuus $GITHUB_REF_NAME" --generate-notes

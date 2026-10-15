@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursor Fatuus — a foolish fire for your cursor</title>
+<meta name="description" content="A soft spotlight that follows your mouse pointer on macOS, so you never lose it on a busy screen.">
+<meta property="og:title" content="Cursor Fatuus">
+<meta property="og:description" content="A foolish fire for your cursor. A soft spotlight that follows your mouse pointer on macOS.">
+<meta property="og:image" content="https://cursor-fatuus.vincent.codes/icon.png">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root {
+    --night: #0c0915;
+    --dusk: #171128;
+    --violet: #6a3ce8;
+    --plum: #5a3a5e;
+    --lilac: #c9b8f0;
+    --wisp: #f6f0ff;
+    --ink: #e9e3f5;
+    --muted: #a39cb8;
+    --line: rgba(201, 184, 240, 0.16);
+    --display: "IM Fell English", "Iowan Old Style", Georgia, serif;
+    --body: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --gutter: clamp(20px, 5vw, 72px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { background: var(--night); }
+
+  body {
+    margin: 0;
+    color: var(--ink);
+    font: 400 clamp(17px, 1.15vw + 12px, 20px)/1.6 var(--body);
+    background:
+      radial-gradient(1200px 700px at 85% -10%, rgba(106, 60, 232, 0.28), transparent 60%),
+      radial-gradient(900px 600px at -10% 30%, rgba(90, 58, 94, 0.35), transparent 60%),
+      var(--night);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Film grain over everything. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 10;
+  }
+
+  /* A faint wisp trails the visitor's pointer across the whole page. */
+  .trail {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 520px;
+    height: 520px;
+    margin: -260px 0 0 -260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201, 184, 240, 0.13), transparent 65%);
+    pointer-events: none;
+    transform: translate3d(-999px, -999px, 0);
+    z-index: 0;
+    mix-blend-mode: screen;
+  }
+
+  main { position: relative; z-index: 1; }
+
+  a { color: inherit; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: var(--gutter); }
+
+  .eyebrow {
+    font: 500 13px/1 var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--lilac);
+  }
+
+  /* ---------- Hero ---------- */
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    align-items: center;
+    gap: clamp(24px, 5vw, 80px);
+    padding-block: clamp(56px, 11vh, 140px) clamp(48px, 9vh, 110px);
+  }
+
+  .hero h1 {
+    margin: 18px 0 0;
+    font: 400 clamp(56px, 9vw, 132px)/0.88 var(--display);
+    letter-spacing: -0.02em;
+  }
+
+  .hero h1 em {
+    display: block;
+    font-style: italic;
+    color: var(--lilac);
+    padding-left: 0.6em;
+  }
+
+  .tagline {
+    margin: 28px 0 0;
+    max-width: 30ch;
+    font-size: 1.25em;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  .tagline span { color: var(--muted); }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 14px 16px;
+    margin-top: 36px;
+  }
+
+  .cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cta .button { margin-bottom: 6px; }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 999px;
+    background: var(--wisp);
+    color: #24163f;
+    font: 500 15px/1 var(--mono);
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .button:hover { background: #fff; transform: translateY(-1px); }
+
+  .button.secondary {
+    background: transparent;
+    color: var(--lilac);
+    box-shadow: inset 0 0 0 1px var(--lilac);
+  }
+
+  .button.secondary:hover { background: rgba(201, 184, 240, 0.12); }
+
+  .button svg { width: 16px; height: 16px; }
+
+  .quiet {
+    font: 400 14px/1.4 var(--mono);
+    color: var(--muted);
+  }
+
+  .quiet a { color: var(--lilac); text-underline-offset: 3px; }
+
+  .icon {
+    position: relative;
+    justify-self: center;
+    width: min(100%, 360px);
+  }
+
+  .icon::before {
+    content: "";
+    position: absolute;
+    inset: 8%;
+    border-radius: 30%;
+    background: radial-gradient(circle at 40% 60%, rgba(201, 184, 240, 0.55), transparent 70%);
+    filter: blur(50px);
+    animation: flicker 5s ease-in-out infinite;
+  }
+
+  .icon img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    animation: drift 9s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) rotate(-1.5deg); }
+    33% { transform: translate(6px, -14px) rotate(1deg); }
+    66% { transform: translate(-8px, -6px) rotate(-0.5deg); }
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 0.85; }
+    40% { opacity: 0.55; }
+    55% { opacity: 1; }
+  }
+
+  /* Staggered entrance. */
+  .rise { opacity: 0; transform: translateY(18px); animation: rise 0.9s cubic-bezier(.2, .7, .2, 1) forwards; }
+  .rise:nth-child(2) { animation-delay: 0.12s; }
+  .rise:nth-child(3) { animation-delay: 0.24s; }
+  .rise:nth-child(4) { animation-delay: 0.36s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* ---------- Demo ---------- */
+
+  .demo { padding-block: clamp(32px, 6vh, 72px); }
+
+  .demo-head { margin-bottom: 28px; }
+
+  .demo h2, .section-title {
+    margin: 10px 0 0;
+    font: 400 clamp(36px, 5vw, 64px)/1 var(--display);
+  }
+
+  .demo p { margin: 12px 0 0; color: var(--muted); max-width: 44ch; }
+
+  .demo-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .field {
+    position: relative;
+    height: clamp(360px, 60vh, 560px);
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.6);
+    touch-action: pan-y;
+    cursor: default;
+  }
+
+  .field canvas { display: block; width: 100%; height: 100%; }
+
+  /* Color, opacity, filters and the fade mask are set from the panel in script. */
+  .spot {
+    --r: 80px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(var(--r) * 2);
+    height: calc(var(--r) * 2);
+    margin: calc(var(--r) * -1) 0 0 calc(var(--r) * -1);
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* A stand-in for the app's menu bar popover, so it uses the system font on purpose. */
+  .popover {
+    font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color: #ececf0;
+  }
+
+  .menubar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: rgba(36, 30, 52, 0.85);
+  }
+
+  .menubar-item {
+    display: flex;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .panel {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px 12px;
+    margin: 12px 0 0;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #2a2731;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Popover arrow, pointing at the menu bar icon. */
+  .panel::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 24px;
+    width: 12px;
+    height: 12px;
+    background: #2a2731;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    transform: rotate(45deg);
+  }
+
+  .panel > label, .panel > span { justify-self: end; }
+
+  .panel-top {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .panel-top label { display: flex; align-items: center; gap: 8px; }
+
+  .panel hr {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .panel input[type="range"] { width: 100%; margin: 0; accent-color: #0a84ff; }
+
+  .switch {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    justify-self: start;
+    width: 32px;
+    height: 18px;
+    margin: 0;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .switch::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s;
+  }
+
+  .switch:checked { background: #0a84ff; }
+  .switch:checked::before { transform: translateX(14px); }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .swatch {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: none;
+    color: #ececf0;
+    cursor: pointer;
+  }
+
+  .swatch[aria-checked="true"] { outline: 2px solid #fff; outline-offset: 1px; }
+  .swatch svg { display: block; width: 100%; height: 100%; }
+  .swatch.custom { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
+  .swatch.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+  .panel-foot {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+  }
+
+  .panel-foot > :last-child { margin-left: auto; }
+
+  .panel-foot a, .panel-foot button {
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.14);
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .panel-foot a:hover, .panel-foot button:hover { background: rgba(255, 255, 255, 0.22); }
+
+  .field-note {
+    margin-top: 14px;
+    font: 400 13px/1.5 var(--mono);
+    color: var(--muted);
+  }
+
+  /* ---------- Features ---------- */
+
+  .features { padding-block: clamp(64px, 12vh, 140px) clamp(32px, 6vh, 80px); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 40px;
+    border-top: 1px solid var(--line);
+  }
+
+  .feature {
+    padding: 28px 28px 32px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .feature:not(:nth-child(3n)) { border-right: 1px solid var(--line); }
+  .feature:not(:nth-child(3n + 1)) { padding-left: 28px; }
+
+  .feature h3 {
+    margin: 0;
+    font: 400 28px/1.1 var(--display);
+    color: var(--wisp);
+  }
+
+  .feature p { margin: 10px 0 0; color: var(--muted); font-size: 17px; }
+
+  /* ---------- Install ---------- */
+
+  .install {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: clamp(32px, 6vw, 96px);
+    padding-block: clamp(48px, 10vh, 120px);
+  }
+
+  .install-text p { margin: 20px 0 0; max-width: 40ch; }
+  .install-text a { color: var(--lilac); text-underline-offset: 3px; }
+
+  .first-launch { color: var(--muted); font-size: 17px; }
+  .first-launch strong { font-weight: 500; color: var(--wisp); }
+
+  /* A stand-in for the Finder window the DMG opens, so it uses the system font on purpose. */
+  .dmg {
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #1f1d24;
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.7);
+    font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color: #ececf0;
+  }
+
+  .dmg-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 14px;
+    background: #2a2731;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dmg-bar i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+  .dmg-bar i:nth-child(2) { background: #febc2e; }
+  .dmg-bar i:nth-child(3) { background: #28c840; }
+  .dmg-bar span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 600; color: #b9b5c4; pointer-events: none; }
+
+  .dmg-body {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 44px 16px 36px;
+  }
+
+  .dmg-body figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .dmg-body figure > :first-child { width: 88px; height: auto; }
+
+  .dmg-arrow {
+    position: absolute;
+    left: 50%;
+    top: 78px;
+    width: 80px;
+    margin-left: -40px;
+    color: rgba(236, 236, 240, 0.45);
+  }
+
+  /* A ghost of the icon drifts into the folder. Icon centers sit at 25% and 75%. */
+  .dmg-ghost {
+    position: absolute;
+    top: 44px;
+    left: 25%;
+    width: 88px;
+    height: 88px;
+    margin-left: -44px;
+    opacity: 0;
+    pointer-events: none;
+    animation: lead-home 3.6s cubic-bezier(.45, 0, .25, 1) infinite;
+  }
+
+  @keyframes lead-home {
+    0%, 12% { left: 25%; opacity: 0; transform: scale(1); }
+    22% { opacity: 0.7; }
+    70% { left: 75%; opacity: 0.7; transform: scale(0.8); }
+    82%, 100% { left: 75%; opacity: 0; transform: scale(0.6); }
+  }
+
+  .install-visual { display: grid; gap: 16px; }
+
+  /* A stand-in for the Privacy & Security pane, in the same system font as the DMG window. */
+  .gate {
+    padding: 14px 16px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #1f1d24;
+    font: 13px/1.35 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color: #ececf0;
+  }
+
+  .gate-title { font-weight: 600; margin-bottom: 10px; }
+
+  .gate-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .gate-button {
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.16);
+    white-space: nowrap;
+    box-shadow: 0 0 0 2px #0a84ff;
+  }
+
+  /* ---------- Footer ---------- */
+
+  footer {
+    padding-block: 48px 64px;
+    border-top: 1px solid var(--line);
+  }
+
+  .footer-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px 40px;
+  }
+
+  .etym {
+    margin: 0;
+    max-width: 52ch;
+    font: italic 400 1.05em/1.5 var(--display);
+    color: var(--muted);
+  }
+
+  .etym b { font-style: normal; font-weight: 400; color: var(--lilac); }
+  .etym cite { font-style: normal; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  .etym cite a { color: var(--lilac); text-underline-offset: 3px; }
+
+  .links { display: flex; gap: 24px; flex-wrap: wrap; font: 400 14px/1 var(--mono); }
+  .links a { color: var(--lilac); text-underline-offset: 4px; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .demo-body { grid-template-columns: minmax(0, 1fr); }
+    .icon { order: -1; width: min(60%, 240px); justify-self: start; }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .grid .feature { padding: 24px 0; border-right: 0; }
+    .install { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* Covers every animation and transition on the page, including hover lifts and switch slides. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .rise { opacity: 1; transform: none; }
+    .button:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="trail" aria-hidden="true"></div>
+
+<main>
+  <header class="wrap hero">
+    <div>    
+      <h1 class="rise">Cursor <em>Fatuus</em></h1>
+      <p class="tagline rise">A foolish fire for your cursor. <br><span>Soft glow that follows your pointer.</span></p>
+      <div class="actions rise">
+        <div class="cta">
+          <a class="button" href="https://github.com/vinzdef/cursor-fatuus/releases/latest/download/CursorFatuus.dmg">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v9m0 0L4.5 7.5M8 11l3.5-3.5M3 14h10"/></svg>
+            Download for Mac
+          </a>
+          <span class="quiet"><a href="https://github.com/vinzdef/cursor-fatuus">Source code</a></span>
+        </div>
+        <div class="cta">
+          <a class="button secondary" href="https://vincent.codes/donate">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 13.5S2 10 2 5.8A3 3 0 0 1 8 4.3a3 3 0 0 1 6 1.5C14 10 8 13.5 8 13.5Z"/></svg>
+            Donate
+          </a>
+          <span class="quiet">macOS 14+</span>
+        </div>
+      </div>
+    </div>
+    <div class="icon">
+      <img src="icon.png" width="512" height="512" alt="Cursor Fatuus app icon: a wisp of pale fire with a mouse pointer at its heart">
+    </div>
+  </header>
+
+  <section class="wrap demo" aria-labelledby="demo-title">
+    <div class="demo-head">
+      <h2 id="demo-title">Lose your cursor here.</h2>
+      <p>Tune the glow from the settings panel.</p>
+    </div>
+    <div class="demo-body">
+      <div class="field">
+        <canvas aria-hidden="true"></canvas>
+        <div class="spot" aria-hidden="true" hidden></div>
+      </div>
+      <div class="popover">
+        <div class="menubar" aria-hidden="true">
+          <span class="menubar-item">
+            <svg viewBox="0 0 18 18" width="18" height="18"><path fill="#fff" fill-opacity=".45" d="M7 16.8 C4.4 16.8 2.3 14.6 2.3 12 C2.3 9.4 4 7.5 6 6.3 C7.8 5.3 8.9 4.6 9.6 3.2 C10.6 1.2 13.8 0.4 16 1 C13.3 2 11.6 3.4 11.9 6 C12.3 8 11.7 10 11.7 12 C11.7 14.6 9.6 16.8 7 16.8 Z"/><circle fill="#fff" cx="7" cy="12" r="3.1"/><circle fill="#fff" cx="15.25" cy="7.25" r=".85"/><circle fill="#fff" cx="14.2" cy="12.2" r=".6"/></svg>
+          </span>
+        </div>
+        <form class="panel" aria-label="Cursor Fatuus settings">
+          <div class="panel-top">
+            <label>Enabled <input id="fx-enabled" class="switch" type="checkbox" role="switch" checked></label>
+            <label>Open at Login <input id="fx-login" class="switch" type="checkbox" role="switch"></label>
+          </div>
+          <hr>
+          <span id="fx-color-label">Color</span>
+          <div class="swatches" role="radiogroup" aria-labelledby="fx-color-label"></div>
+          <label for="fx-opacity">Opacity</label>
+          <input id="fx-opacity" type="range" min="0" max="1" step="0.01" value="0.85">
+          <label for="fx-radius">Radius</label>
+          <input id="fx-radius" type="range" min="1" max="300" step="1" value="80">
+          <label for="fx-softness">Softness</label>
+          <input id="fx-softness" type="range" min="0" max="1" step="0.01" value="1">
+          <hr>
+          <label for="fx-blur">Blur</label>
+          <input id="fx-blur" type="range" min="0" max="10" step="0.1" value="0">
+          <label for="fx-invert">Invert</label>
+          <input id="fx-invert" class="switch" type="checkbox" role="switch">
+          <hr>
+          <div class="panel-foot">
+            <a href="https://github.com/vinzdef/cursor-fatuus">About</a>
+            <a href="https://vincent.codes/donate">Donate</a>
+            <button type="button" id="fx-quit">Quit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="field-note">A browser approximation.</div>  </section>
+
+  <section class="wrap features" aria-labelledby="features-title">
+    <h2 class="section-title" id="features-title">Small, quiet, always there.</h2>
+    <div class="grid">
+      <div class="feature">
+        <h3>Follows you everywhere</h3>
+        <p>Across every display and application, even full-screen.</p>
+      </div>
+      <div class="feature">
+        <h3>Tint</h3>
+        <p>Optionally colored, at any opacity.</p>
+      </div>
+      <div class="feature">
+        <h3>Blur &amp; invert</h3>
+        <p>Calm the clutter under the pointer, or flip its colors so the cursor stands out.</p>
+      </div>
+      <div class="feature">
+        <h3>Radius &amp; softness</h3>
+        <p>From a crisp disc to a single gentle halo.</p>
+      </div>
+      <div class="feature">
+        <h3>No weird permissions</h3>
+        <p>It never records or reads your screen. Nothing to approve.</p>
+      </div>
+      <div class="feature">
+        <h3>Out of the way</h3>
+        <p>Lives in the menu bar. No Dock icon, no windows.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap install" aria-labelledby="install-title">
+    <div class="install-text">
+      <h2 class="section-title" id="install-title">Lead the wisp home.</h2>
+      <p>Open the <a href="https://github.com/vinzdef/cursor-fatuus/releases/latest/download/CursorFatuus.dmg">disk image</a> and drag Cursor Fatuus into Applications. It shows up in your menu bar.</p>
+      <p class="first-launch"><strong>First launch only.</strong> The app isn't notarized by Apple, so macOS blocks it once. Open System Settings, scroll Privacy &amp; Security down to Security, and click Open Anyway.</p>
+    </div>
+    <div class="install-visual">
+    <div class="dmg" role="img" aria-label="The Cursor Fatuus disk image window: the app icon next to the Applications folder, to drag it into">
+      <div class="dmg-bar"><i></i><i></i><i></i><span>Cursor Fatuus</span></div>
+      <div class="dmg-body">
+        <figure>
+          <img src="icon.png" width="88" height="88" alt="">
+          <figcaption>Cursor Fatuus</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="-6 -11 76 76" width="88" height="88" aria-hidden="true"><path d="M4 9a4 4 0 0 1 4-4h15l6 6h27a4 4 0 0 1 4 4v4H4z" fill="#3a86e8"/><rect x="4" y="15" width="56" height="34" rx="4" fill="#5aa7ff"/><path d="M26 41 32 25l6 16M28.4 35h7.2" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <figcaption>Applications</figcaption>
+        </figure>
+        <svg class="dmg-arrow" viewBox="0 0 80 16" aria-hidden="true"><path d="M2 8h70m-7-6 7 6-7 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <img class="dmg-ghost" src="icon.png" width="88" height="88" alt="">
+      </div>
+    </div>
+    <div class="gate" role="img" aria-label="System Settings, Privacy and Security: Cursor Fatuus was blocked to protect your Mac, with an Open Anyway button">
+      <div class="gate-title">Security</div>
+      <div class="gate-row">
+        <span>“Cursor Fatuus” was blocked to protect your Mac.</span>
+        <span class="gate-button">Open Anyway</span>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <div class="footer-row">
+      <p class="etym"><b>ignis fatuus</b> — Latin for “foolish fire”: “a light that sometimes appears in the night over marshy ground and is often attributable to the combustion of gas from decomposed organic matter.” <cite><a href="https://www.merriam-webster.com/dictionary/ignis%20fatuus">Merriam-Webster</a></cite></p>
+      <nav class="links" aria-label="Links">
+        <a href="https://vincent.codes/donate">Donate</a>
+        <a href="https://github.com/vinzdef/cursor-fatuus">GitHub</a>
+        <a href="https://vincent.codes">vincent.codes</a>
+      </nav>
+    </div>
+  </footer>
+</main>
+
+<script>
+(() => {
+  // Read live, so changing the system setting takes effect without a reload.
+  const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduceMotion = motionQuery.matches;
+  motionQuery.addEventListener('change', (e) => { reduceMotion = e.matches; });
+
+  // Page-wide trail.
+  const trail = document.querySelector('.trail');
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'mouse') trail.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+  });
+
+  // Demo field: a deliberately busy canvas of drifting shapes, seeded so it
+  // looks the same each visit.
+  const field = document.querySelector('.field');
+  const canvas = field.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const spot = field.querySelector('.spot');
+  let width = 0, height = 0, shapes = [];
+
+  function resize() {
+    const dpr = devicePixelRatio || 1;
+    ({ width, height } = field.getBoundingClientRect());
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    let seed = 7;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    shapes = Array.from({ length: Math.round((width * height) / 300) }, () => ({
+      x: rand() * width,
+      y: rand() * height,
+      vx: (rand() - 0.5) * 16,
+      vy: (rand() - 0.5) * 16,
+      size: 4 + rand() * 26,
+      kind: rand(),
+      angle: rand() * Math.PI,
+      spin: (rand() - 0.5) * 0.4,
+      lineWidth: 1 + rand() * 3,
+      color: `hsl(${Math.floor(rand() * 360)} ${70 + rand() * 30}% ${35 + rand() * 35}%)`,
+    }));
+    draw(0);
+  }
+
+  function draw(dt) {
+    ctx.fillStyle = '#231a3a';
+    ctx.fillRect(0, 0, width, height);
+    for (const s of shapes) {
+      s.x = (((s.x + s.vx * dt) % width) + width) % width;
+      s.y = (((s.y + s.vy * dt) % height) + height) % height;
+      s.angle += s.spin * dt;
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.angle);
+      ctx.fillStyle = ctx.strokeStyle = s.color;
+      if (s.kind < 0.4) {
+        ctx.beginPath(); ctx.arc(0, 0, s.size / 2, 0, Math.PI * 2); ctx.fill();
+      } else if (s.kind < 0.7) {
+        ctx.fillRect(-s.size / 2, -s.size / 4, s.size, s.size / 2);
+      } else {
+        ctx.lineWidth = s.lineWidth;
+        ctx.beginPath(); ctx.moveTo(-s.size, 0); ctx.lineTo(s.size, 0); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  resize();
+  new ResizeObserver(resize).observe(field);
+
+  let visible = true;
+  new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(field);
+  let last = 0;
+  function frame(t) {
+    if (visible && !reduceMotion) draw(last ? Math.min((t - last) / 1000, 0.05) : 0);
+    last = t;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // Panel state, with the app's defaults.
+  const settings = { enabled: true, color: '#ffffff', opacity: 0.85, blur: 0, radius: 80, softness: 1, invert: false };
+  let inside = false;
+
+  // Same curve as the app: solid core, then 1 - smoothstep over the outer
+  // `softness` fraction of the radius.
+  function falloff(softness) {
+    const fade = Math.max(softness, 0.02);
+    const stops = [];
+    for (let i = 0; i <= 8; i++) {
+      const f = i / 8;
+      stops.push(`rgba(0,0,0,${(1 - f * f * (3 - 2 * f)).toFixed(3)}) ${((1 - fade + fade * f) * 100).toFixed(1)}%`);
+    }
+    return `radial-gradient(circle closest-side, #000 0%, ${stops.join(', ')})`;
+  }
+
+  function apply() {
+    spot.hidden = !(inside && settings.enabled);
+    spot.style.setProperty('--r', `${settings.radius}px`);
+    spot.style.opacity = settings.opacity;
+    spot.style.background = settings.color ?? 'transparent';
+    // CSS blur takes a standard deviation; the app's blur is a larger radius, so scale up to match.
+    const filter = [settings.blur > 0 && `blur(${settings.blur * 2.5}px)`, settings.invert && 'invert(1)'].filter(Boolean).join(' ') || 'none';
+    spot.style.backdropFilter = spot.style.webkitBackdropFilter = filter;
+    spot.style.maskImage = spot.style.webkitMaskImage = falloff(settings.softness);
+  }
+
+  // The spot exists only while the pointer is over the field.
+  function follow(e) {
+    const r = field.getBoundingClientRect();
+    spot.style.transform = `translate3d(${e.clientX - r.left}px, ${e.clientY - r.top}px, 0)`;
+    if (!inside) { inside = true; apply(); }
+  }
+  function leave() { inside = false; apply(); }
+  field.addEventListener('pointermove', follow);
+  field.addEventListener('pointerdown', follow);
+  field.addEventListener('pointerleave', leave);
+  field.addEventListener('pointercancel', leave);
+  field.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') leave(); });
+
+  // Panel controls.
+  const swatches = document.querySelector('.swatches');
+  function select(value, el) {
+    settings.color = value;
+    swatches.querySelectorAll('[role="radio"]').forEach((s) => s.setAttribute('aria-checked', s === el));
+    apply();
+  }
+  function addSwatch(label, value, background) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'swatch';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', label);
+    b.setAttribute('aria-checked', settings.color === value);
+    if (background) b.style.background = background;
+    b.addEventListener('click', () => select(value, b));
+    swatches.append(b);
+    return b;
+  }
+  addSwatch('None', null).innerHTML = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 14 L14 4" stroke="currentColor" stroke-width="1.5"/></svg>';
+  [['White', '#ffffff'], ['Black', '#000000'], ['Yellow', '#ffe600'], ['Orange', '#ff8000'], ['Red', '#ff0000'],
+   ['Magenta', '#ff00ff'], ['Cyan', '#00ffff'], ['Green', '#00ff00'], ['Blue', '#0066ff']]
+    .forEach(([label, value]) => addSwatch(label, value, value));
+  const custom = document.createElement('label');
+  custom.className = 'swatch custom';
+  custom.setAttribute('role', 'radio');
+  custom.setAttribute('aria-label', 'Custom color');
+  custom.setAttribute('aria-checked', 'false');
+  custom.innerHTML = '<input type="color" value="#c9b8f0">';
+  custom.firstChild.addEventListener('input', (e) => select(e.target.value, custom));
+  swatches.append(custom);
+
+  const bind = (id, key, read) => {
+    const input = document.getElementById(id);
+    input.addEventListener('input', () => { settings[key] = read(input); apply(); });
+    return input;
+  };
+  const enabled = bind('fx-enabled', 'enabled', (i) => i.checked);
+  bind('fx-opacity', 'opacity', (i) => +i.value);
+  bind('fx-blur', 'blur', (i) => +i.value);
+  bind('fx-radius', 'radius', (i) => +i.value);
+  bind('fx-softness', 'softness', (i) => +i.value);
+  bind('fx-invert', 'invert', (i) => i.checked);
+  document.getElementById('fx-quit').addEventListener('click', () => {
+    enabled.checked = false;
+    settings.enabled = false;
+    apply();
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>
