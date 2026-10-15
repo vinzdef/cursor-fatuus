@@ -3,3 +3,5 @@
 /.build/
 /.swiftpm/
 /.impeccable/
+*.p12
+*.p8
