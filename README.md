@@ -19,7 +19,7 @@
 
 Small, quiet, always there.
 
-- **Follows you everywhere.** Across every display and application, even full-screen.
+- **Follows you.** Across every display and application, even full-screen.
 - **Tint.** Optionally colored, at any opacity.
 - **Blur & invert.** Calm the clutter under the pointer, or flip its colors so the cursor stands out.
 - **Radius & softness.** From a crisp disc to a single gentle halo.
