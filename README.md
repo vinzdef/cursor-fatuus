@@ -6,7 +6,7 @@
 
 <p align="center">
   A foolish fire for your cursor.<br>
-  A soft glow that follows your mouse pointer on macOS, so you never lose it on a busy screen.
+  Soft glow that follows your pointer.
 </p>
 
 <p align="center">
@@ -17,28 +17,30 @@
 
 ## Features
 
-- Follows the pointer across every display and Space, including full-screen apps. Clicks pass straight through.
-- **Color** and **opacity**: any tint, or none.
-- **Blur** and **invert** what's under the pointer.
-- **Radius** and **softness**: from a crisp disc to a single gentle haze.
-- No permissions: it never records or reads your screen.
-- Lives in the menu bar. No Dock icon, no windows.
+Small, quiet, always there.
+
+- **Follows you everywhere.** Across every display and application, even full-screen.
+- **Tint.** Optionally colored, at any opacity.
+- **Blur & invert.** Calm the clutter under the pointer, or flip its colors so the cursor stands out.
+- **Radius & softness.** From a crisp disc to a single gentle halo.
+- **No weird permissions.** It never records or reads your screen. Nothing to approve.
+- **Out of the way.** Lives in the menu bar. No Dock icon, no windows.
 
 ## Install
 
-1. Download the DMG from the [latest release](https://github.com/vinzdef/cursor-fatuus/releases/latest).
-2. Drag **Cursor Fatuus** to Applications and open it.
-3. The app isn't notarized, so macOS blocks the first launch. Open **System Settings → Privacy & Security** and choose **Open Anyway**.
+Open the [disk image](https://github.com/vinzdef/cursor-fatuus/releases/latest/download/CursorFatuus.dmg) and drag Cursor Fatuus into Applications. It shows up in your menu bar.
 
-Requires macOS 14 Sonoma or later.
+**First launch only.** The app isn't notarized by Apple, so macOS blocks it once. Open System Settings, scroll Privacy & Security down to Security, and click Open Anyway.
+
+Requires macOS 14 or later.
 
 ## Release
 
 Push a version tag and GitHub Actions builds a universal DMG and publishes the release:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag -a v0.2.0 -m "Cursor Fatuus 0.2.0"
+git push origin v0.2.0
 ```
 
 `make dmg` builds the same DMG locally.
