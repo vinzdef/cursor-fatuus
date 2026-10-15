@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://cursor-fatuus.vincent.codes">Website</a> ·
   <a href="https://github.com/vinzdef/cursor-fatuus/releases/latest/download/CursorFatuus.dmg">Download</a> ·
-  <a href="https://vincent.codes/donate">Donate</a>
+  <a href="https://ko-fi.com/vinzdef">Donate</a>
 </p>
 
 ## Features
@@ -57,4 +57,4 @@ Blur and invert use undocumented macOS APIs (`CABackdropLayer`), so a future mac
 
 ## Support
 
-If Cursor Fatuus helps you, consider [donating](https://vincent.codes/donate).
+If Cursor Fatuus helps you, consider [donating on Ko-fi](https://ko-fi.com/vinzdef) or [sponsoring on GitHub](https://github.com/sponsors/vinzdef).

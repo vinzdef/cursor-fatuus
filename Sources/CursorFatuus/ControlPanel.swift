@@ -63,7 +63,7 @@ struct ControlPanel: View {
             Divider()
             HStack {
                 Button("About") { NSWorkspace.shared.open(URL(string: "https://cursor-fatuus.vincent.codes")!) }
-                Button("Donate") { NSWorkspace.shared.open(URL(string: "https://vincent.codes/donate")!) }
+                Button("Donate") { NSWorkspace.shared.open(URL(string: "https://ko-fi.com/vinzdef")!) }
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
             }
