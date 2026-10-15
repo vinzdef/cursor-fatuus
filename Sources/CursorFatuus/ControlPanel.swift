@@ -64,6 +64,9 @@ struct ControlPanel: View {
             HStack {
                 Button("About") { NSWorkspace.shared.open(URL(string: "https://cursor-fatuus.vincent.codes")!) }
                 Button("Donate") { NSWorkspace.shared.open(URL(string: "https://ko-fi.com/vinzdef")!) }
+                if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                    Text("v\(version)").foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
             }

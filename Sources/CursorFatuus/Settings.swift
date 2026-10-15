@@ -26,7 +26,7 @@ final class Settings: ObservableObject {
         defaults.register(defaults: [
             "enabled": true,
             "color": [1.0, 1.0, 1.0],
-            "opacity": 0.13,
+            "opacity": 0.1,
             "blurRadius": 0.0,
             "invert": false,
             "radius": 175.0,

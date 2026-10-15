@@ -641,7 +641,7 @@
           <span id="fx-color-label">Color</span>
           <div class="swatches" role="radiogroup" aria-labelledby="fx-color-label"></div>
           <label for="fx-opacity">Opacity</label>
-          <input id="fx-opacity" type="range" min="0" max="1" step="0.01" value="0.13">
+          <input id="fx-opacity" type="range" min="0" max="1" step="0.01" value="0.1">
           <label for="fx-radius">Radius</label>
           <input id="fx-radius" type="range" min="1" max="300" step="1" value="175">
           <label for="fx-softness">Softness</label>
@@ -812,7 +812,7 @@
   requestAnimationFrame(frame);
 
   // Panel state, with the app's defaults.
-  const settings = { enabled: true, color: '#ffffff', opacity: 0.13, blur: 0, radius: 175, softness: 1, invert: false };
+  const settings = { enabled: true, color: '#ffffff', opacity: 0.1, blur: 0, radius: 175, softness: 1, invert: false };
   let inside = false;
 
   // Same curve as the app: solid core, then 1 - smoothstep over the outer
