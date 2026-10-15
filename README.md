@@ -30,20 +30,18 @@ Small, quiet, always there.
 
 Open the [disk image](https://github.com/vinzdef/cursor-fatuus/releases/latest/download/CursorFatuus.dmg) and drag Cursor Fatuus into Applications. It shows up in your menu bar.
 
-**First launch only.** The app isn't notarized by Apple, so macOS blocks it once. Open System Settings, scroll Privacy & Security down to Security, and click Open Anyway.
-
 Requires macOS 14 or later.
 
 ## Release
 
-Push a version tag and GitHub Actions builds a universal DMG and publishes the release:
+Push a version tag and GitHub Actions builds a universal DMG, signs and notarizes it, and publishes the release:
 
 ```sh
 git tag -a v0.2.0 -m "Cursor Fatuus 0.2.0"
 git push origin v0.2.0
 ```
 
-`make dmg` builds the same DMG locally.
+`make dmg` builds an ad-hoc signed DMG locally. `make notarize SIGN_ID="Developer ID Application: …"` signs and notarizes it, using the `cf-notary` profile from `xcrun notarytool store-credentials`.
 
 ## Build from source
 

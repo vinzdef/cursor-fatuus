@@ -427,9 +427,6 @@
   .install-text p { margin: 20px 0 0; max-width: 40ch; }
   .install-text a { color: var(--lilac); text-underline-offset: 3px; }
 
-  .first-launch { color: var(--muted); font-size: 17px; }
-  .first-launch strong { font-weight: 500; color: var(--wisp); }
-
   /* A stand-in for the Finder window the DMG opens, so it uses the system font on purpose. */
   .dmg {
     overflow: hidden;
@@ -503,39 +500,6 @@
     82%, 100% { left: 75%; opacity: 0; transform: scale(0.6); }
   }
 
-  .install-visual { display: grid; gap: 16px; }
-
-  /* A stand-in for the Privacy & Security pane, in the same system font as the DMG window. */
-  .gate {
-    padding: 14px 16px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: #1f1d24;
-    font: 13px/1.35 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-    color: #ececf0;
-  }
-
-  .gate-title { font-weight: 600; margin-bottom: 10px; }
-
-  .gate-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px 16px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .gate-button {
-    padding: 4px 12px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.16);
-    white-space: nowrap;
-    box-shadow: 0 0 0 2px #0a84ff;
-  }
-
   /* ---------- Footer ---------- */
 
   footer {
@@ -601,7 +565,7 @@
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v9m0 0L4.5 7.5M8 11l3.5-3.5M3 14h10"/></svg>
             Download for Mac
           </a>
-          <span class="quiet">macOS 14+</span>
+          <span class="quiet"><span id="version">v0.1.2</span> · macOS 14+</span>
         </div>
         <div class="cta">
           <a class="button secondary" href="https://ko-fi.com/vinzdef">
@@ -696,9 +660,7 @@
     <div class="install-text">
       <h2 class="section-title" id="install-title">Lead the wisp home.</h2>
       <p>Open the <a href="https://github.com/vinzdef/cursor-fatuus/releases/latest/download/CursorFatuus.dmg">disk image</a> and drag Cursor Fatuus into Applications. It shows up in your menu bar.</p>
-      <p class="first-launch"><strong>First launch only.</strong> The app isn't notarized by Apple, so macOS blocks it once. Open System Settings, scroll Privacy &amp; Security down to Security, and click Open Anyway.</p>
     </div>
-    <div class="install-visual">
     <div class="dmg" role="img" aria-label="The Cursor Fatuus disk image window: the app icon next to the Applications folder, to drag it into">
       <div class="dmg-bar"><i></i><i></i><i></i><span>Cursor Fatuus</span></div>
       <div class="dmg-body">
@@ -713,14 +675,6 @@
         <svg class="dmg-arrow" viewBox="0 0 80 16" aria-hidden="true"><path d="M2 8h70m-7-6 7 6-7 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <img class="dmg-ghost" src="icon.png" width="88" height="88" alt="">
       </div>
-    </div>
-    <div class="gate" role="img" aria-label="System Settings, Privacy and Security: Cursor Fatuus was blocked to protect your Mac, with an Open Anyway button">
-      <div class="gate-title">Security</div>
-      <div class="gate-row">
-        <span>“Cursor Fatuus” was blocked to protect your Mac.</span>
-        <span class="gate-button">Open Anyway</span>
-      </div>
-    </div>
     </div>
   </section>
 
@@ -737,6 +691,12 @@
 </main>
 
 <script>
+// Swap in the latest release tag, so the version keeps up without editing the page.
+fetch('https://api.github.com/repos/vinzdef/cursor-fatuus/releases/latest')
+  .then((r) => r.ok ? r.json() : null)
+  .then((release) => { if (release?.tag_name) document.getElementById('version').textContent = release.tag_name; })
+  .catch(() => {});
+
 (() => {
   // Read live, so changing the system setting takes effect without a reload.
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
