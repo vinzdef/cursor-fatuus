@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 
 /// Grid rather than Form so the color picker can span both columns.
@@ -17,6 +18,8 @@ struct ControlPanel: View {
 
     @ObservedObject var settings: Settings
     @State private var showsPicker = false
+    // The system owns this state; it can also be changed in System Settings → General → Login Items.
+    @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
 
     private var isCustomColor: Bool {
         settings.color.map { !Self.swatches.contains($0) } ?? false
@@ -24,10 +27,15 @@ struct ControlPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Toggle("Enabled", isOn: $settings.enabled)
+                Spacer()
+                Toggle("Open at Login", isOn: $opensAtLogin)
+                    .onChange(of: opensAtLogin) { _, on in setOpensAtLogin(on) }
+            }
+            Divider()
+            // One grid for both groups keeps their labels in a single column.
             Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
-                row("Enabled") {
-                    Toggle("Enabled", isOn: $settings.enabled).labelsHidden()
-                }
                 row("Color") { swatchRow }
                 if showsPicker {
                     GridRow {
@@ -38,20 +46,23 @@ struct ControlPanel: View {
                 row("Opacity") {
                     Slider(value: $settings.opacity, in: 0...1)
                 }
-                row("Blur") {
-                    Slider(value: $settings.blurRadius, in: Settings.blurRange)
-                }
                 row("Radius") {
                     Slider(value: $settings.radius, in: Settings.radiusRange)
                 }
                 row("Softness") {
                     Slider(value: $settings.softness, in: 0...1)
                 }
+                Divider()
+                row("Blur") {
+                    Slider(value: $settings.blurRadius, in: Settings.blurRange)
+                }
                 row("Invert") {
                     Toggle("Invert", isOn: $settings.invert).labelsHidden()
                 }
             }
+            Divider()
             HStack {
+                Button("About") { NSWorkspace.shared.open(URL(string: "https://cursor-fatuus.vincent.codes")!) }
                 Button("Donate") { NSWorkspace.shared.open(URL(string: "https://vincent.codes/donate")!) }
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
@@ -60,6 +71,20 @@ struct ControlPanel: View {
         .toggleStyle(.switch)
         .padding()
         .frame(width: 330)
+    }
+
+    private func setOpensAtLogin(_ on: Bool) {
+        do {
+            if on {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            NSLog("Cursor Fatuus: login item change failed: \(error.localizedDescription)")
+        }
+        // Reflect what the system actually did, e.g. a failed registration snaps back off.
+        opensAtLogin = SMAppService.mainApp.status == .enabled
     }
 
     private func row(_ label: String, @ViewBuilder content: () -> some View) -> some View {
