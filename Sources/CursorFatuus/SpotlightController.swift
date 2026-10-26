@@ -5,6 +5,7 @@ final class SpotlightController: NSObject {
     private var windows: [OverlayWindow] = []
     private var displayLink: CADisplayLink?
     private var screenObserver: NSObjectProtocol?
+    private var lastMouse: CGPoint?
 
     init(settings: Settings) {
         self.settings = settings
@@ -58,6 +59,8 @@ final class SpotlightController: NSObject {
             window.orderFrontRegardless()
             return window
         }
+        // New windows start with the halo unplaced.
+        lastMouse = nil
         displayLink?.invalidate()
         displayLink = NSScreen.screens.first?.displayLink(target: self, selector: #selector(tick))
         displayLink?.add(to: .main, forMode: .common)
@@ -65,6 +68,8 @@ final class SpotlightController: NSObject {
 
     @objc private func tick(_ link: CADisplayLink) {
         let mouse = NSEvent.mouseLocation
+        guard mouse != lastMouse else { return }
+        lastMouse = mouse
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         for window in windows {
