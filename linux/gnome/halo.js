@@ -45,25 +45,61 @@ const TintEffect = GObject.registerClass({
     }
 });
 
-// Inverts what is already on screen beneath the actor, through the falloff:
-// blending computes white * (1 - screen) + screen * (1 - a). Costs the same as
-// the tint, since nothing beneath is redrawn. Use with a white tint.
-const InvertEffect = GObject.registerClass({
-    GTypeName: 'CursorFatuusInvertEffect',
-}, class InvertEffect extends TintEffect {
-    vfunc_create_pipeline(texture) {
-        const pipeline = super.vfunc_create_pipeline(texture);
-        try {
-            pipeline.set_blend(
-                'RGB = ADD(SRC_COLOR * (1 - DST_COLOR), DST_COLOR * (1 - SRC_COLOR[A])) ' +
-                'A = ADD(SRC_COLOR, DST_COLOR * (1 - SRC_COLOR[A]))');
-        } catch (e) {
-            // Painting must go on: a failed blend leaves a white glow instead.
-            console.error(`Cursor Fatuus: invert blend failed: ${e.message}`);
+// Inverts what is already on screen beneath it, through the falloff: blending
+// computes (1 - screen) * a + screen * (1 - a). Costs about the same as the
+// tint, since nothing beneath is redrawn. Paints with its own pipeline, as
+// offscreen effects don't expose theirs for setting a blend.
+const InvertDisc = GObject.registerClass({
+    GTypeName: 'CursorFatuusInvertDisc',
+}, class InvertDisc extends Clutter.Actor {
+    configure(softness, opacity) {
+        this._uniforms = {softness, opacity};
+        this._applyUniforms();
+        this.queue_redraw();
+    }
+
+    _applyUniforms() {
+        if (!this._pipeline)
+            return;
+        for (const [name, value] of Object.entries(this._uniforms))
+            this._pipeline.set_uniform_1f(this._pipeline.get_uniform_location(name), value);
+    }
+
+    vfunc_paint(paintContext) {
+        const framebuffer = paintContext.get_framebuffer();
+        if (!this._pipeline) {
+            this._pipeline = makeInvertPipeline(framebuffer.get_context());
+            this._applyUniforms();
         }
-        return pipeline;
+        const [width, height] = this.get_size();
+        framebuffer.draw_textured_rectangle(this._pipeline, 0, 0, width, height, 0, 0, 1, 1);
+    }
+
+    // Without this, Clutter can't tell what a custom paint covers and redraws
+    // the whole stage on every move.
+    vfunc_get_paint_volume(volume) {
+        return volume.set_from_allocation(this);
     }
 });
+
+function makeInvertPipeline(context) {
+    const pipeline = Cogl.Pipeline.new(context);
+    // A layer, even without a texture, gives the shader texture coordinates.
+    pipeline.set_layer_null_texture(0);
+    pipeline.add_snippet(Cogl.Snippet.new(Cogl.SnippetHook.FRAGMENT, FALLOFF, `
+        float a = falloff(cogl_tex_coord_in[0].xy);
+        cogl_color_out = vec4(a);
+    `));
+    try {
+        pipeline.set_blend(
+            'RGB = ADD(SRC_COLOR * (1 - DST_COLOR), DST_COLOR * (1 - SRC_COLOR[A])) ' +
+            'A = ADD(SRC_COLOR, DST_COLOR * (1 - SRC_COLOR[A]))');
+    } catch (e) {
+        // Painting must go on: a failed blend leaves a white glow instead.
+        console.error(`Cursor Fatuus: invert blend failed: ${e.message}`);
+    }
+    return pipeline;
+}
 
 // Optionally inverts the actor's content, then masks it with the falloff.
 const BackdropEffect = GObject.registerClass({
@@ -104,11 +140,9 @@ export class Halo {
         this._backdrop.add_effect(this._backdropEffect);
         this._backdrop.add_child(this._blurBox);
 
-        // The effects replace these backgrounds; they only give the actors content to paint.
-        this._invertEffect = new InvertEffect();
-        this._invert = new St.Widget({style: 'background-color: white;'});
-        this._invert.add_effect(this._invertEffect);
+        this._invert = new InvertDisc();
 
+        // The effect replaces this background; it only gives the actor content to paint.
         this._tintEffect = new TintEffect();
         this._tint = new St.Widget({style: 'background-color: white;'});
         this._tint.add_effect(this._tintEffect);
@@ -148,7 +182,7 @@ export class Halo {
         this._backdropEffect.setUniforms({softness, opacity, invert: invert ? 1 : 0});
         this._invert.visible = invert && !blurs;
         if (this._invert.visible)
-            this._invertEffect.setUniforms({softness, opacity, tint: [1, 1, 1]});
+            this._invert.configure(softness, opacity);
 
         this._tint.visible = color !== null;
         if (color)
