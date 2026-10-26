@@ -1,0 +1,12 @@
+{
+  "uuid": "cursor-fatuus@vincent.codes",
+  "name": "Cursor Fatuus",
+  "description": "A foolish fire for your cursor. Soft glow that follows your pointer.",
+  "shell-version": ["46", "47", "48", "49"],
+  "url": "https://github.com/vinzdef/cursor-fatuus",
+  "settings-schema": "org.gnome.shell.extensions.cursor-fatuus",
+  "donations": {
+    "kofi": "vinzdef",
+    "github": "vinzdef"
+  }
+}

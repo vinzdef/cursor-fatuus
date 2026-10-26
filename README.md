@@ -41,17 +41,29 @@ git tag -a v0.2.0 -m "Cursor Fatuus 0.2.0"
 git push origin v0.2.0
 ```
 
-`make dmg` builds an ad-hoc signed DMG locally. `make notarize SIGN_ID="Developer ID Application: …"` signs and notarizes it, using the `cf-notary` profile from `xcrun notarytool store-credentials`.
+From `macos/`, `make dmg` builds an ad-hoc signed DMG locally. `make notarize SIGN_ID="Developer ID Application: …"` signs and notarizes it, using the `cf-notary` profile from `xcrun notarytool store-credentials`.
 
 ## Build from source
 
 ```sh
+cd macos
 make run
 ```
 
-Needs Xcode or the Xcode Command Line Tools. The app is built to `build/Cursor Fatuus.app`.
+Needs Xcode or the Xcode Command Line Tools. The app is built to `macos/build/Cursor Fatuus.app`.
 
 Blur and invert use undocumented macOS APIs (`CABackdropLayer`), so a future macOS update may break them.
+
+### GNOME (experimental)
+
+A GNOME Shell extension for GNOME 46 or later lives in `linux/gnome/`:
+
+```sh
+cd linux/gnome
+make install
+```
+
+Log out and back in to load it. It adds a Cursor Fatuus toggle to Quick Settings; the toggle's menu opens the settings. `make nested` runs a GNOME Shell in a window instead.
 
 ## Support
 

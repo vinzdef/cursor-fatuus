@@ -1,7 +1,8 @@
 .DS_Store
-/build/
-/.build/
-/.swiftpm/
+/macos/build/
+/macos/.build/
+/macos/.swiftpm/
+/linux/gnome/build/
 /.impeccable/
 *.p12
 *.p8
